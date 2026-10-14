@@ -2329,6 +2329,12 @@ TyKind infer_call(Compiler *c, int id) {
      emitter dispatches it: typed as the builtin (any? is a Boolean), a
      truthy String from `def any? = @v` read as false (#4952) */
   if (nt_int(c->nt, id, "enum_own", 0)) {
+    /* a receiver typed since as an Array (`nested = a.map.with_index { }`)
+       is no class's instance: with a block the arm is Array's own loop, as
+       the emitter emits it, and answers what that answers */
+    { int orv = nt_ref(c->nt, id, "receiver");
+      TyKind ort = orv >= 0 ? comp_ntype(c, orv) : TY_UNKNOWN;
+      if (ty_is_array(ort) && nt_ref(c->nt, id, "block") >= 0) return infer_call_inner(c, id); }
     const char *on = nt_str(c->nt, id, "name");
     TyKind r = TY_UNKNOWN; int pending = 0;
     for (int k = 0; on && k < c->nclasses; k++) {
